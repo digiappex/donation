@@ -1,0 +1,23 @@
+version: 1.0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/donationprojectapi
+hooks:
+  BeforeInstall:
+    #- location: scrits/install_dependencies.sh
+    #  timeout: 300
+    #  runas: root
+  AfterInstall:
+   # - location: scripts/deploy.sh
+   #   timeout: 300
+   #   runas: root
+  ApplicationStart:
+    - location: scripts/deploy.sh
+    #- location: scripts/create_test_db.sh
+      timeout: 300
+      runas: root
+  ApplicationStop:
+  #  - location: scripts/stop_server.sh
+  #    timeout: 300
+  #    runas: root
