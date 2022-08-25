@@ -1,0 +1,58 @@
+# This is a sample build configuration for .NET Core.
+# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: mcr.microsoft.com/dotnet/core/sdk:3.1
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - dotnetcore
+        script: # Modify the commands below to build your repository.
+          - export PROJECT_NAME=donationProjectWebAPI
+          - export BUILD_NAME=release_$BITBUCKET_BUILD_NUMBER
+          #- export TEST_NAME=yourTestName
+          - dotnet restore
+          - dotnet build $PROJECT_NAME
+          #- cd $PROJECT_NAME
+          - dotnet publish -o $BUILD_NAME
+          - cp $PROJECT_NAME/appspec.yml $BUILD_NAME
+          - cp -rf $PROJECT_NAME/scripts $BUILD_NAME
+          - cd $BUILD_NAME
+          - tar -czvf codeDeploy.tar.gz *.*
+          - cp codeDeploy.tar.gz $PROJECT_NAME
+          #- dotnet test $TEST_NAME
+         # - pipe: atlassian/aws-s3-deploy:0.3.8
+         #  variables:
+         #     AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+          #    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+           #   AWS_DEFAULT_REGION: 'us-east-2'
+            #  S3_BUCKET: 'digapex-bucket'
+             # #LOCAL_PATH: '/opt/atlassian/pipelines/agent/build/codeDeploy.tar.gz'
+          - pipe: atlassian/aws-code-deploy:0.5.2
+            variables:
+                AWS_DEFAULT_REGION: 'us-east-2'
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                COMMAND: 'upload'
+                APPLICATION_NAME: 'donationProjectWebAPI'
+                ZIP_FILE: 'codeDeploy.tar.gz'
+                S3_BUCKET: 'digapex-bucket'
+                VERSION_LABEL: 'donationProjectWebAPI-1.0.0'
+          - pipe: atlassian/aws-code-deploy:0.5.2
+            variables:
+                    AWS_DEFAULT_REGION: 'us-east-2'
+                    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                    COMMAND: 'deploy'
+                    APPLICATION_NAME: 'donationProjectWebAPI'
+                    DEPLOYMENT_GROUP: 'donation-webapi-deployment'
+                    S3_BUCKET: 'digapex-bucket'
+                    IGNORE_APPLICATION_STOP_FAILURES: 'true'
+                    FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
+                    VERSION_LABEL: 'donationProjectWebAPI-1.0.0'
+                    WAIT: 'true'
+              
+                                                  
